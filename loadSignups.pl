@@ -85,7 +85,8 @@ my $file = $ARGV[0] or die "Need to get CSV file on the command line\n";
 
 my $email;
 my $gymnast;
-my $quantity;
+my $quantity;         #the number of jobs the user gets credit for, i.e., Runners and 50/50 raffle don't count towards a users requirement
+my $signUpQuantity;   #the number of jobs the user has signed up for using sign up genius
 my $suLogId;
 
 
@@ -102,12 +103,17 @@ while (my $row = $csv->getline($fh)) {
     $gymnast = undef;
     $email = undef;
     $quantity = 0;
+
+    $signUpQuantity = $row->[2] + 0;
+
+
+
     
     my $record = {
         dateTime => parseTime($row->[0]),
     	location => $row->[1],
         sessionInfo => parseLocation($row->[1]),
-    	quantity => $row->[2],
+#    	quantity => $row->[2],
     	item => $row->[3],
     	firstName => $row->[4],
     	lastName => $row->[5],
@@ -115,39 +121,50 @@ while (my $row = $csv->getline($fh)) {
     	signUpComment => $row->[7],
     	signUpTimestamp => $row->[8],
         itemComment => $row->[9]
-};
-#    print "Inserting record...\n";
-   
-    $suLogId = $suLogCol->insert($record);
-
-    $record->{'logId'} = $suLogId;
-        
-#    $suCol->insert($record);
+    };
+    
+    #    $suCol->insert($record);
     $email = $record->{'email'};
+    $gymnast = $suCol->find_one({'$or' => [{'email1' => $email}, {'email2' => $email}]});
+        
 
-    # Runners and 50/50 Raffle people don't count as signups 
-    $quantity = $record->{'quantity'} + 0 unless (($record->{'item'} eq 'Runners') || ($record->{'item'} eq '50/50 Raffle'));    
-    if (defined($email) && ($email ne '')) {
+    #    print "Inserting record for $row->[1] $row->[3] $record->{'lastName'}...";
 
-        $gymnast = $suCol->find_one({'$or' => [{'email1' => $email}, {'email2' => $email}]});
+    for (my $i = 0; $i < $signUpQuantity; $i++ ) {
+        delete $record->{'logId'};
+        $quantity = 1;
+        
+        $suLogId = $suLogCol->insert($record);
+        $record->{'logId'} = $suLogId;
 
-        if ($gymnast) {
-            $suCol->update({'_id' => $gymnast->{'_id'}},
-                           {'$push' => {'signUp' => $record},
-                            '$inc' => {'signUpCount' => $quantity}});
-            
+        # Runners and 50/50 Raffle people don't count as signups, so the users signup count does not get incremented
+        $quantity = 0 if (($record->{'item'} eq 'Runners') || ($record->{'item'} eq '50/50 Raffle'));
+
+
+        if (defined($email) && ($email ne '')) {
+            if ($gymnast) {
+                $suCol->update({'_id' => $gymnast->{'_id'}},
+                               {'$push' => {'signUp' => $record},
+                                '$inc' => {'signUpCount' => $quantity}});
+                #            print "position filled\n";
+            } else {
+                #            print "position empty\n";
+            }
+        }
+        else {
+            #\        print "\n";
+        }
+    
+        if (!defined($gymnast) && defined($email) && ($email ne '')) {
+            #        die "No gymnast found for signup: $email\n";
+            print ">>>>> No gymnast found for signup: $email\n";
+        }
+
+        if ((!defined($email) || $email eq '') && (($record->{'lastName'} || $record->{'firstName'}))) {
+            print ">>>>> Sign up with name information but no email found for $record->{'firstName'} $record->{'lastName'}\n";
         }
     }
     
-    if (!defined($gymnast) && defined($email) && ($email ne '')) {
-#        die "No gymnast found for signup: $email\n";
-        print ">>>>> No gymnast found for signup: $email\n";
-    }
-
-    if ((!defined($email) || $email eq '') && (($record->{'lastName'} || $record->{'firstName'}))) {
-        print ">>>>> Sign up with name information but no email found for $record->{'firstName'} $record->{'lastName'}\n";
-    }
-
     
 #    print "Search email: $email\n";
 #    $suCol->update({'email' => {'$in' => [$record->{'email1'}, $record->{'email2'}]}},

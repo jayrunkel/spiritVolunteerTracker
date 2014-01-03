@@ -8,6 +8,9 @@ use warnings;
 use strict;
 
 use MongoDB;
+use sessions;
+use Data::Dumper;
+
 
 # Loop through all the gymnasts. For each sign up verify that they:
 #  - have signed up for the right number of spots
@@ -22,9 +25,7 @@ my $suCol = $db->get_collection( 'signUps' );
 my $suLogCol = $db->get_collection( 'signUpLog' );
 
 my $resCursor;
-
-my $noReportJobs = ['Runners', '50/50 Raffle'];
-
+my $aggResult;
 
 
 sub printNames($$) {
@@ -67,7 +68,45 @@ sub printSessions($) {
     }
     
 }
-              
+
+sub printFields($$) {
+    my $arrayRef = shift;
+    my $fieldsRef = shift;
+
+    my $field;
+    
+    foreach $field (@$fieldsRef) {
+        print "$field ";
+    }
+    print "\n";
+    
+    foreach my $result (@$arrayRef) {
+
+        foreach $field (@$fieldsRef) {
+            print "$result->{$field} ";
+        }
+        print "\n";
+    }
+}
+
+
+print "______________________________________________________\n";
+print "Session List\n";
+$aggResult = $suLogCol->aggregate([{'$group' => {'_id' => '$item',
+                                                'count' => {'$sum' => 1},
+                                               }},
+                        {"\$project" =>  {
+                                           'type' => {"\$cond" => [{"\$or" => generateSetTest($nonMeetSpecificJobs, "\$_id")},
+                                                                   'Non-Meet-Specific',
+                                                                   'Other']},
+                                           'count' => 1,
+                                           'job' => '$_id',
+                                           '_id' => 0
+                        }}
+                    ]);
+
+printFields($aggResult, ["job", "type", "count"]);
+
 
 print "______________________________________________________\n";
 print "Gymnasts with fewer than the required sign ups\n";

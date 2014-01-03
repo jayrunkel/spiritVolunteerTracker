@@ -11,6 +11,7 @@ use MongoDB;
 use Data::Dumper;
 use DateTime;
 use DateTime::Format::Strptime;
+use sessions;
 
 
 my $client = MongoDB::MongoClient->new(host => 'localhost:27017');
@@ -23,12 +24,6 @@ my $strp = DateTime::Format::Strptime->new(
     locale    => 'en_US',
     time_zone => 0
 );
-
-
-my @setUpSessions = ('Pre-meet', 'Post-meet');  
-my $noReportJobs = ['Runners', '50/50 Raffle'];  #gymnast jobs
-my $nonMeetSpecificJobs = ['Admissions', 'Concessions', 'Gymnasts Sign-in', 'Parking Lot Attendant', 'Souvenirs', 'Announcer/Door Monitor', 'Medical Person'];
-my $allNonSessionJobs = \(@$noReportJobs, @$nonMeetSpecificJobs );
 
 
 sub formatDateTime($) {
@@ -57,22 +52,22 @@ sub getSessionEmptySignups($$$$) {
     return($results);
 }
 
+# \$or" => [{"\$eq" => ["\$signUp.item", "Admissions"]}, 
+#                                                                  {"\$eq" => ["\$signUp.item", "Concessions"]},
+#                                                                  {"\$eq" => ["\$signUp.item", "Gymnasts Sign-in/Front Bathroom"]},
+#                                                                  {"\$eq" => ["\$signUp.item", "Parking Lot Attendant"]},
+#                                                                  {"\$eq" => ["\$signUp.item", "Souveniers"]},
+#                                                                  {"\$eq" => ["\$signUp.item", "Announcer/Door Monitor/Back Bathroom"]},
+#                                                                  {"\$eq" => ["\$signUp.item", "Medical Person"]}
+#                                                                 ]
 
 my $result = $suCol->aggregate(
     [
-        {"\$match" => {"competing" => 1, "signUp" => {"\$exists" => 1}}},
+        {"\$match" => {"signUp" => {"\$exists" => 1}}},
         {"\$unwind" => "\$signUp"},
         {"\$group" => {
             "_id" => "\$signUp.sessionInfo.session",
-            "jobs" => {"\$addToSet" => {"\$cond" => [{"\$or" => [{"\$eq" => ["\$signUp.item", "Admissions"]}, 
-                                                                 {"\$eq" => ["\$signUp.item", "Concessions"]},
-                                                                 {"\$eq" => ["\$signUp.item", "Gymnasts Sign-in"]},
-                                                                 {"\$eq" => ["\$signUp.item", "Parking Lot Attendant"]},
-                                                                 {"\$eq" => ["\$signUp.item", "Souvenirs"]},
-                                                                 {"\$eq" => ["\$signUp.item", "Announcer/Door Monitor"]},
-                                                                 {"\$eq" => ["\$signUp.item", "Medical Person"]}
-                                                                ]
-                                                     },
+            "jobs" => {"\$push" => {"\$cond" => [{"\$or" => generateSetTest($nonMeetSpecificJobs, "\$signUp.item")},
                                                      {"prepJob" => "\$signUp.item",
                                                       "first" => "\$signUp.firstName",
                                                       "last" => "\$signUp.lastName",
@@ -91,7 +86,7 @@ my $result = $suCol->aggregate(
  ]
 );  
 
-#print Dumper($result);
+print Dumper($result);
 
 my $signInData = {};
 my @sessions = ();
@@ -138,7 +133,7 @@ foreach my $sessJob (@$result) {
 foreach my $s (@sessions) {
     if (!($s ~~ @setUpSessions) && $signInData->{$s}->{'sessionJobs'}->[0]->{'dateTime'}) {
         print "SESSION $s: @{[formatDateTime($signInData->{$s}->{'sessionJobs'}->[0]->{'dateTime'})]},,,\n";
-        print "Job:,Name:,Check-in Signature\n";
+        print "Job:,Name:,Check-in Signature,Event:\n";
 
         @sortedJobs = sort {$a->{'sessionJob'} cmp $b->{'sessionJob'}} (@{$signInData->{$s}->{'sessionJobs'}}, @{getSessionEmptySignups($s, 'sessionJob', '$nin', $allNonSessionJobs)});
         
@@ -165,7 +160,7 @@ foreach my $s (@sessions) {
         
         print "Date Time,Job:,Name:,Check-in Signature\n";
 
-        @sortedJobs = sort {$a->{'dateTime'} cmp $b->{'dateTime'}} (@{$signInData->{$s}->{'prepJobs'}}, @{getSessionEmptySignups($s, 'prepJob', '$in', $nonMeetSpecificJobs)});
+        @sortedJobs = sort {$a->{'dateTime'} cmp $b->{'dateTime'} || $a->{'prepJob'} cmp $b->{'prepJob'}} (@{$signInData->{$s}->{'prepJobs'}}, @{getSessionEmptySignups($s, 'prepJob', '$in', $nonMeetSpecificJobs)});
 
         foreach my $job (@sortedJobs) {
             if (defined $job->{'last'}) {
