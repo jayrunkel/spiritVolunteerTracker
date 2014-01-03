@@ -86,7 +86,7 @@ my $result = $suCol->aggregate(
  ]
 );  
 
-print Dumper($result);
+#print Dumper($result);
 
 my $signInData = {};
 my @sessions = ();
@@ -200,17 +200,18 @@ foreach my $s (@setUpSessions) {
 foreach my $s (@sessions) {
     if (!($s ~~ @setUpSessions) && $signInData->{$s}->{'sessionJobs'}->[0]->{'dateTime'}) {
         print "SESSION $s (Gymnast): @{[formatDateTime($signInData->{$s}->{'sessionJobs'}->[0]->{'dateTime'})]},,,\n";
-        print "Job:,Name:,Check-in Signature\n";
+        print "Job:,Name:,Check-in Signature,Event:\n";
 
         @sortedJobs = sort {$a->{'sessionJob'} cmp $b->{'sessionJob'}} (@{$signInData->{$s}->{'sessionJobs'}}, @{getSessionEmptySignups($s, 'sessionJob', '$in', $noReportJobs)});
         
         foreach my $job (@sortedJobs) {
             if ($job->{'sessionJob'} ~~ @$noReportJobs) {
+                $jobModifier = $job->{'sessionJob'} eq "Runners" ? 'BM/FL/UB/VT' : "";
                 if (defined $job->{'last'}) {
-                    print "$job->{'sessionJob'},$job->{'first'} $job->{'last'},,\n";
+                    print "$job->{'sessionJob'},$job->{'first'} $job->{'last'},,$jobModifier\n";
                 }
                 else {
-                    print "$job->{'sessionJob'},,,\n";
+                    print "$job->{'sessionJob'},,,$jobModifier\n";
                 }
             }
         }
