@@ -120,13 +120,21 @@ $resCursor = $suCol->find({'$where' => 'function levelMatch() {
     var level = this.level;
 
     var signUpLevels = [];
-    var signUp;
-    for (signUp in this.signUp)
-        {
-           signUpLevels.concat(signUp.levels);
+    var i;
+    var retVal = false;
+    
+    if ("signUp" in this && this.competing == 1) {
+        for (i = 0; i < this.signUp.length; i++)
+            {
+                if (this.signUp[i].item != "Medical Person") {
+                   signUpLevels = signUpLevels.concat(this.signUp[i].sessionInfo.levels);
+                }
+            }
+            
+            retVal = signUpLevels.indexOf(level) > -1;
         }
-
-    return signUpLevels.indexOf(level) > -1;
+ 
+    return retVal;
 }'});
 printNames($resCursor, []);
 
