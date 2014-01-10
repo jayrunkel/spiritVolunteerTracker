@@ -41,7 +41,7 @@ sub printNames($$) {
     print "\n";
     
     while ( my $doc = $cursor->next()) {
-        print "$lineCount: $doc->{'sib1First'} $doc->{'last'} ";
+        print "$lineCount: $doc->{'gymnasts'}[0]->{'first'} $doc->{'last'} ";
         foreach my $field (@$fieldsArrRef) {
 
             my $refType = ref($doc->{$field});

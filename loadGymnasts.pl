@@ -40,6 +40,7 @@ my $csv = Text::CSV_XS->new({ sep_char => ',', binary => 1});
 my $file = $ARGV[0] or die "Need to get CSV file on the command line\n";
 my $reqNumSignUps = $ARGV[1] or die "Need to get required number of sign ups on command line\n";
 my $count = 1;
+my $level;
 
 
 print "Opening file: $file\n";
@@ -54,28 +55,29 @@ while (my $row = $csv->getline($fh)) {
     
     my $record = {
         _id => $count,
-        level => $row->[0],
+#        level => $row->[0],
     	last => trimName($row->[1]),
         gymnasts => [{first => trimName($row->[2]),
                       level => $row->[0],
                       competing => 0}],
         numCompeting => 0,
         numGymnasts => 0,
-    	sib1First => trimName($row->[2]),
+#    	sib1First => trimName($row->[2]),
         emails => [ normalizeEmail($row->[5]) ],
-    	email1 => normalizeEmail($row->[5]),
-    	email2 => normalizeEmail($row->[6]),
+#    	email1 => normalizeEmail($row->[5]),
+#    	email2 => normalizeEmail($row->[6]),
     	momDadNames => $row->[7],
     	notes => $row->[8],
         reqNumSignUps => $reqNumSignUps + 0,
         signUpCount => 0,
-        competing => 0
+#        competing => 0
     };
 
     push(@{$record->{'emails'}}, normalizeEmail($row->[6])) if normalizeEmail($row->[6]) ne "";
     $count++;
-    
-    if (defined($record->{'level'}) && ($record->{'level'} ne 'LEVEL') && ($record->{'level'} ne '') && ($record->{'level'} ne '2013-14')) {
+
+    $level = $row->[0];
+    if (defined($level) && ($level ne 'LEVEL') && ($level ne '') && ($level ne '2013-14')) {
  #       print "Gymnast: $name\n";
 #        print "Inserting record...\n";
 
