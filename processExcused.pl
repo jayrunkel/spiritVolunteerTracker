@@ -49,7 +49,7 @@ while (my $row = $csv->getline($fh)) {
 
 #    print "Excusing $row->[0] $row->[1]\n";
     
-    $suCol->update({'$or' => [{'sib1First' => $row->[0]}, {'sib2First' => $row->[0]}], 'last' => trimName($row->[1])},
+    $suCol->update({'gymnasts.first' => $row->[0], 'last' => trimName($row->[1])},
                    {'$set' => {'reqNumSignUps' => ($row->[2] + 0)}});
 };
 

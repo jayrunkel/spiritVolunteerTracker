@@ -125,8 +125,7 @@ while (my $row = $csv->getline($fh)) {
     
     #    $suCol->insert($record);
     $email = $record->{'email'};
-    $gymnast = $suCol->find_one({'$or' => [{'email1' => $email}, {'email2' => $email}]});
-        
+    $gymnast = $suCol->find_one({'emails' => $email});
 
     #    print "Inserting record for $row->[1] $row->[3] $record->{'lastName'}...";
 

@@ -33,19 +33,34 @@ sub printNames($$) {
     my $cursor = shift;
     my $fieldsArrRef = shift;
 
-    my $count = 1;
+    my $lineCount = 1;
+    my $count;
+    
     print "First Last ";
     foreach my $field (@$fieldsArrRef) {print "$field ";}
     print "\n";
     
     while ( my $doc = $cursor->next()) {
-        print "$count: $doc->{'sib1First'} $doc->{'last'} ";
+        print "$lineCount: $doc->{'sib1First'} $doc->{'last'} ";
         foreach my $field (@$fieldsArrRef) {
-            print "$doc->{$field} ";
+
+            my $refType = ref($doc->{$field});
+
+            if ($refType eq "ARRAY") {
+                $count = 0;
+                foreach my $val (@{$doc->{$field}}) {
+                    print "/" if $count > 0;
+                    print "$val";
+                    $count++;
+                }
+                print " ";
+            }
+            else {
+                print "$doc->{$field} ";                
+            }
         }
         print "\n";
-        $count++;
-        
+        $lineCount++;
     }
 }
 
@@ -74,6 +89,8 @@ sub printFields($$) {
     my $fieldsRef = shift;
 
     my $field;
+    my $count;
+    
     
     foreach $field (@$fieldsRef) {
         print "$field ";
@@ -83,7 +100,22 @@ sub printFields($$) {
     foreach my $result (@$arrayRef) {
 
         foreach $field (@$fieldsRef) {
-            print "$result->{$field} ";
+            my $refType = ref($result->{$field});
+#            print "The ref type for $result->{$field} is $refType\n";
+#            print ">$refType\n";
+            
+            if ($refType eq "ARRAY" ) {
+                $count = 0;
+                foreach my $val (@{$result->{$field}}) {
+                    print "/" if $count > 0;
+                    print "$val";
+                    $count++;
+                }
+                print " ";
+            }
+            else {
+                print "$result->{$field} ";
+            }
         }
         print "\n";
     }
@@ -110,40 +142,86 @@ printFields($aggResult, ["job", "type", "count"]);
 
 print "______________________________________________________\n";
 print "Gymnasts with fewer than the required sign ups\n";
-$resCursor = $suCol->find({'$where' => '(this.competing == 1) && (this.reqNumSignUps > this.signUpCount)'});
-printNames($resCursor, ["reqNumSignUps", "signUpCount", "email1", "email2"]);
+#$resCursor = $suCol->find({'$where' => '(this.competing == 1) && (this.reqNumSignUps > this.signUpCount)'});
+#printNames($resCursor, ["reqNumSignUps", "signUpCount", "email1", "email2"]);
+
+$aggResult = $suCol->aggregate([{'$match' =>  {'gymnasts.competing' => 1}},
+                                {'$project' => {
+                                    'first' => '$gymnasts.first',
+                                    'last' => '$last',
+                                    'emails' => '$emails',
+                                    'reqNumSignUps' => '$reqNumSignUps',
+                                    'signUpCount' => '$signUpCount',
+                                    'fail' => {'$cond' => [{'$gt' => ['$reqNumSignUps', '$signUpCount']}, 1, 0]}}},
+                                {'$match' => {'fail' => 1}}
+                            ]);
+printFields($aggResult, ["first", "last", "reqNumSignUps", "signUpCount", "emails"]);
+
 
 print "\n";
 print "______________________________________________________\n";
 print "Gymnasts signed up for the session in which they are competing\n";
-$resCursor = $suCol->find({'$where' => 'function levelMatch() {
-    var level = this.level;
+# $resCursor = $suCol->find({'$where' => 'function levelMatch() {
+#     var level = this.level;
 
-    var signUpLevels = [];
-    var i;
-    var retVal = false;
+#     var signUpLevels = [];
+#     var i;
+#     var retVal = false;
     
-    if ("signUp" in this && this.competing == 1) {
-        for (i = 0; i < this.signUp.length; i++)
-            {
-                if (this.signUp[i].item != "Medical Person") {
-                   signUpLevels = signUpLevels.concat(this.signUp[i].sessionInfo.levels);
-                }
-            }
+#     if ("signUp" in this && this.competing == 1) {
+#         for (i = 0; i < this.signUp.length; i++)
+#             {
+#                 if (this.signUp[i].item != "Medical Person") {
+#                    signUpLevels = signUpLevels.concat(this.signUp[i].sessionInfo.levels);
+#                 }
+#             }
             
-            retVal = signUpLevels.indexOf(level) > -1;
-        }
+#             retVal = signUpLevels.indexOf(level) > -1;
+#         }
  
-    return retVal;
-}'});
-printNames($resCursor, []);
+#     return retVal;
+# }'});
+# printNames($resCursor, []);
+
+
+$aggResult = $suCol->aggregate([{'$match' => {'numCompeting' => {'$gt' => 0},
+                                             'signUpCount' => {'$gt' => 0}}},
+                                {'$unwind' => '$gymnasts'},
+                                {'$unwind' => '$signUp'},
+                                {'$match' => {'signUp.item' => {'$ne' => 'Medical Person'}}},
+                                {'$project' => {
+                                    '_id' => '$_id',
+                                    'first' => '$gymnasts.first',
+                                    'last' => '$last',
+                                    'level' => '$gymnasts.level',
+                                    'signUpLevels' => '$signUp.sessionInfo.levels',
+                                    'signUpSession' => '$signUp.sessionInfo.session',
+                                    'signUpFirst' => '$signUp.firstName',
+                                    'signUpItem' => '$signUp.item'
+                                }},
+                                {'$unwind' => '$signUpLevels'},
+                                {'$project' => {
+                                    '_id' => '$_id',
+                                    'first' => '$first',
+                                    'last' => '$last',
+                                    'level' => '$level',
+                                    'signUpLevels' => '$signUpLevels',
+                                    'signUpSession' => '$signUpSession',
+                                    'signUpFirst' => '$signUpFirst',
+                                    'signUpItem' => '$signUpItem',
+                                    'bad' => {'$cond' => [{'$eq' => ['$level', '$signUpLevels']}, 1, 0]}
+                                }},
+                                {'$match' => {'bad' => 1}}
+                          ]);
+printFields($aggResult, ["first", "last", "level", "signUpLevels", "signUpSession", "signUpFirst", "signUpItem"]);
+
 
 
 print "______________________________________________________\n";
 print "Gymnasts with parents signed up for jobs, but the gymnast is not competing\n";
 # $nin => [] probably will not work when there are multiple sign ups
-$resCursor = $suCol->find({"competing" => 0, "signUpCount" => {'$gt' => 0}, "signUp.item" => {'$nin' => $noReportJobs}});
-printNames($resCursor, ["signUpCount", "email1", "email2"]);
+$resCursor = $suCol->find({"numCompeting" => 0, "signUpCount" => {'$gt' => 0}, "signUp.item" => {'$nin' => $noReportJobs}});
+printNames($resCursor, ["signUpCount", "emails"]);
 
 
 print "\n";

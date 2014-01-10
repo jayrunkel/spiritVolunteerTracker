@@ -56,7 +56,13 @@ while (my $row = $csv->getline($fh)) {
         _id => $count,
         level => $row->[0],
     	last => trimName($row->[1]),
+        gymnasts => [{first => trimName($row->[2]),
+                      level => $row->[0],
+                      competing => 0}],
+        numCompeting => 0,
+        numGymnasts => 0,
     	sib1First => trimName($row->[2]),
+        emails => [ normalizeEmail($row->[5]) ],
     	email1 => normalizeEmail($row->[5]),
     	email2 => normalizeEmail($row->[6]),
     	momDadNames => $row->[7],
@@ -65,6 +71,8 @@ while (my $row = $csv->getline($fh)) {
         signUpCount => 0,
         competing => 0
     };
+
+    push(@{$record->{'emails'}}, normalizeEmail($row->[6])) if normalizeEmail($row->[6]) ne "";
     $count++;
     
     if (defined($record->{'level'}) && ($record->{'level'} ne 'LEVEL') && ($record->{'level'} ne '') && ($record->{'level'} ne '2013-14')) {

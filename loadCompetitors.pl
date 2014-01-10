@@ -44,8 +44,12 @@ while (my $row = $csv->getline($fh)) {
         
 #        print "Setting $row->[0] $row->[1] as a competitor\n";
     
-        $suCol->update({'$or' => [{'sib1First' => $row->[0]}, {'sib2First' => $row->[0]}], 'last' => trimName($row->[1])},
-                       {'$set' => {'competing' => 1}});
+        # $suCol->update({'$or' => [{'sib1First' => $row->[0]}, {'sib2First' => $row->[0]}], 'last' => trimName($row->[1])},
+        #                {'$set' => {'competing' => 1}});
+        $suCol->update({'gymnasts.first' => $row->[0], 'last' => trimName($row->[1])},
+                       {'$set' => {'gymnasts.$.competing' => 1},
+                        '$inc' => {'numCompeting' => 1}});
+        
     }
 }
 close $fh;
