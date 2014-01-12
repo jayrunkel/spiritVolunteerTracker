@@ -21,15 +21,15 @@ sub trimName($)
     
 }
 
+my $dbName = $ARGV[0] or die "First argument is the database name\n";
+my $file = $ARGV[1] or die "Need to get CSV file on the command line\n";
 
 my $client = MongoDB::MongoClient->new(host => 'localhost:27017');
-my $db = $client->get_database( 'readySetGo' );
+my $db = $client->get_database( $dbName );
 my $suCol = $db->get_collection( 'signUps' );
 
 
 my $csv = Text::CSV_XS->new({ sep_char => ',', binary => 1});
-
-my $file = $ARGV[0] or die "Need to get CSV file on the command line\n";
 
 
 print "Opening file: $file\n";
@@ -47,7 +47,9 @@ while (my $row = $csv->getline($fh)) {
         # $suCol->update({'$or' => [{'sib1First' => $row->[0]}, {'sib2First' => $row->[0]}], 'last' => trimName($row->[1])},
         #                {'$set' => {'competing' => 1}});
         $suCol->update({'gymnasts.first' => $row->[0], 'last' => trimName($row->[1])},
-                       {'$set' => {'gymnasts.$.competing' => 1},
+                       {'$set' => {'gymnasts.$.competing' => 1,
+                                   'gymnasts.$.level' => $row->[2],
+                                   'gymnasts.$.session' => $row->[3]},
                         '$inc' => {'numCompeting' => 1}});
         
     }

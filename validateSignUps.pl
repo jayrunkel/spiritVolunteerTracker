@@ -19,8 +19,11 @@ use Data::Dumper;
 #Questions
 # - what are the items that don't count
 
+my $dbName = $ARGV[0] or die "First argument is the database name\n";
+
+
 my $client = MongoDB::MongoClient->new(host => 'localhost:27017');
-my $db = $client->get_database( 'readySetGo' );
+my $db = $client->get_database( $dbName );
 my $suCol = $db->get_collection( 'signUps' );
 my $suLogCol = $db->get_collection( 'signUpLog' );
 
@@ -90,7 +93,7 @@ sub printFields($$) {
 
     my $field;
     my $count;
-    
+    my $lineCount = 1;
     
     foreach $field (@$fieldsRef) {
         print "$field ";
@@ -98,11 +101,13 @@ sub printFields($$) {
     print "\n";
     
     foreach my $result (@$arrayRef) {
-
+        print "$lineCount: ";
+        
         foreach $field (@$fieldsRef) {
             my $refType = ref($result->{$field});
 #            print "The ref type for $result->{$field} is $refType\n";
 #            print ">$refType\n";
+
             
             if ($refType eq "ARRAY" ) {
                 $count = 0;
@@ -116,8 +121,11 @@ sub printFields($$) {
             else {
                 print "$result->{$field} ";
             }
+
         }
         print "\n";
+        $lineCount++;
+
     }
 }
 

@@ -1,8 +1,12 @@
 #!/bin/bash
 
-./loadGymnasts.pl gymnasts10Dec2013.csv 1
-./processSiblings.pl siblings-21Dec2013.csv
-./loadCompetitors.pl spiritsnow14.csv
-./processExcused.pl excused-21Dec2013.csv
-./loadSignups.pl signUpGenius-27Dec2013.csv
-./validateSignUps.pl
+DB_NAME=dalmation2014
+FILE_DIR=~/Documents/Personal/dalmation2014
+
+./loadGymnasts.pl $DB_NAME $FILE_DIR/gymnasts10Dec2013.csv 3
+./processSiblings.pl $DB_NAME $FILE_DIR/siblings-21Dec2013.csv
+./loadCompetitors.pl $DB_NAME $FILE_DIR/spiritdal14.csv
+./processExcused.pl $DB_NAME $FILE_DIR/excused-Dalmatian2014.csv
+./loadSignups.pl $DB_NAME $FILE_DIR/signUpGenius-11Jan2014.csv
+./counts.pl $DB_NAME
+./validateSignUps.pl $DB_NAME

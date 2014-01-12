@@ -13,6 +13,7 @@ use MongoDB;
 
 my $dateTimeStrRegEx = '^(\d\d?)/(\d\d?)/(\d\d?)\s(\d\d):(\d\d)\s(AM|PM)$';
 
+
 sub parseLocation($) {
     my $locStr = shift;
 
@@ -69,10 +70,11 @@ sub parseTime($) {
     return $result;
 }
 
-
+my $dbName = $ARGV[0] or die "First argument should be the database name\n";
+my $file = $ARGV[1] or die "Second argument should be the signup CSV file\n";
 
 my $client = MongoDB::MongoClient->new(host => 'localhost:27017');
-my $db = $client->get_database( 'readySetGo' );
+my $db = $client->get_database( $dbName );
 my $suCol = $db->get_collection( 'signUps' );
 my $suLogCol = $db->get_collection( 'signUpLog' );
 
@@ -81,7 +83,7 @@ $suLogCol->drop();
 
 my $csv = Text::CSV_XS->new({ sep_char => ',', binary => 1});
 
-my $file = $ARGV[0] or die "Need to get CSV file on the command line\n";
+
 
 my $email;
 my $gymnast;

@@ -30,15 +30,18 @@ sub normalizeEmail($)
     return lc($string);
 }
 
+my $dbName = $ARGV[0] or die "First argument should be the database name\n";
+my $file = $ARGV[1] or die "Need to get CSV file on the command line\n";
+my $reqNumSignUps = $ARGV[2] or die "Need to get required number of sign ups on command line\n";
+
 my $client = MongoDB::MongoClient->new(host => 'localhost:27017');
-my $db = $client->get_database( 'readySetGo' );
+my $db = $client->get_database( $dbName );
 my $suCol = $db->get_collection( 'signUps' );
 $suCol->drop();
 
 my $csv = Text::CSV_XS->new({ sep_char => ',', binary => 1});
 
-my $file = $ARGV[0] or die "Need to get CSV file on the command line\n";
-my $reqNumSignUps = $ARGV[1] or die "Need to get required number of sign ups on command line\n";
+
 my $count = 1;
 my $level;
 

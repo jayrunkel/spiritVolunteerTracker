@@ -14,8 +14,10 @@ use DateTime::Format::Strptime;
 use sessions;
 
 
+my $dbName = $ARGV[0] or die "First argument is the database name\n";
+
 my $client = MongoDB::MongoClient->new(host => 'localhost:27017');
-my $db = $client->get_database( 'readySetGo' );
+my $db = $client->get_database( $dbName );
 my $suCol = $db->get_collection( 'signUps' );
 my $suLogCol = $db->get_collection( 'signUpLog' );
 
