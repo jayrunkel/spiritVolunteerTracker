@@ -21,7 +21,7 @@ sub parseLocation($) {
     my @levels = ();
     my $result = {};
 
-    if ($locStr =~ m/^Session\s(\d)+/) {
+    if ($locStr =~ m/^Session\s(\d+)/) {
         $session = $1;
 
         @levels = split(/\s*[-&\/]\s*/, substr($locStr, index($locStr, 'Level ') + 6));
