@@ -49,7 +49,7 @@ while (my $row = $csv->getline($fh)) {
         $suCol->update({'gymnasts.first' => $row->[0], 'last' => trimName($row->[1])},
                        {'$set' => {'gymnasts.$.competing' => 1,
                                    'gymnasts.$.level' => $row->[2],
-                                   'gymnasts.$.session' => $row->[3]},
+                                   'gymnasts.$.session' => $row->[3] + 0},
                         '$inc' => {'numCompeting' => 1}});
         
     }

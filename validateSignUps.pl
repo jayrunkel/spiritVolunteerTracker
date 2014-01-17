@@ -202,6 +202,7 @@ $aggResult = $suCol->aggregate([{'$match' => {'numCompeting' => {'$gt' => 0},
                                     'first' => '$gymnasts.first',
                                     'last' => '$last',
                                     'level' => '$gymnasts.level',
+                                    'session' => '$gymnasts.session',
                                     'signUpLevels' => '$signUp.sessionInfo.levels',
                                     'signUpSession' => '$signUp.sessionInfo.session',
                                     'signUpFirst' => '$signUp.firstName',
@@ -217,7 +218,7 @@ $aggResult = $suCol->aggregate([{'$match' => {'numCompeting' => {'$gt' => 0},
                                     'signUpSession' => '$signUpSession',
                                     'signUpFirst' => '$signUpFirst',
                                     'signUpItem' => '$signUpItem',
-                                    'bad' => {'$cond' => [{'$eq' => ['$level', '$signUpLevels']}, 1, 0]}
+                                    'bad' => {'$cond' => [{'$eq' => ['$session', '$signUpSession']}, 1, 0]}
                                 }},
                                 {'$match' => {'bad' => 1}}
                           ]);
