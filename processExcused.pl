@@ -33,11 +33,7 @@ my $suCol = $db->get_collection( 'signUps' );
 
 my $csv = Text::CSV_XS->new({ sep_char => ',', binary => 1});
 
-my $sibling1;
-my $sibling2;
-my $sibling1Id;
-my $sibling2Id;
-
+my $query;
 
 
 print "Opening file: $file\n";
@@ -49,9 +45,15 @@ my $firstLine = <$fh>;
 while (my $row = $csv->getline($fh)) {
 
 #    print "Excusing $row->[0] $row->[1]\n";
-    
-    $suCol->update({'gymnasts.first' => $row->[0], 'last' => trimName($row->[1])},
-                   {'$set' => {'reqNumSignUps' => ($row->[2] + 0)}});
+
+    $query = {'gymnasts.first' => $row->[0], 'last' => trimName($row->[1])};
+    if ($suCol->find_one($query)) {
+        $suCol->update($query,
+                       {'$set' => {'reqNumSignUps' => ($row->[2] + 0)}});
+    }
+    else {
+        print ">>>>>>> Unable to find excused gymnast $row->[0] $row->[1]\n";
+    }
 };
 
 close $fh;
