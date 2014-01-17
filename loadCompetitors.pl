@@ -47,6 +47,7 @@ while (my $row = $csv->getline($fh)) {
     
         # $suCol->update({'$or' => [{'sib1First' => $row->[0]}, {'sib2First' => $row->[0]}], 'last' => trimName($row->[1])},
         #                {'$set' => {'competing' => 1}});
+<<<<<<< HEAD
 
         $query = {'gymnasts.first' => $row->[0], 'last' => trimName($row->[1])};
         if ($suCol->find_one($query)) {
@@ -63,6 +64,13 @@ while (my $row = $csv->getline($fh)) {
         else {
            print ">>>>>> Cannot find competitor $row->[0] $row->[1]\n"; 
         }
+=======
+        $suCol->update({'gymnasts.first' => $row->[0], 'last' => trimName($row->[1])},
+                       {'$set' => {'gymnasts.$.competing' => 1,
+                                   'gymnasts.$.level' => $row->[2],
+                                   'gymnasts.$.session' => $row->[3] + 0},
+                        '$inc' => {'numCompeting' => 1}});
+>>>>>>> timeOverLap
         
     }
 }
