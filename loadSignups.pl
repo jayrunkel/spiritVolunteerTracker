@@ -8,10 +8,30 @@ use warnings;
 use strict;
 
 use Text::CSV_XS;
-use DateTime::Tiny;
+use DateTime;
+#use DateTime::Tiny;
 use MongoDB;
+use Scalar::Util qw(looks_like_number);
+use sessions;
+
 
 my $dateTimeStrRegEx = '^(\d\d?)/(\d\d?)/(\d\d?)\s(\d\d):(\d\d)\s(AM|PM)$';
+
+
+my $dbName = $ARGV[0] or die "First argument should be the database name\n";
+my $file = $ARGV[1] or die "Second argument should be the signup CSV file\n";
+
+my $client = MongoDB::MongoClient->new(host => 'localhost:27017');
+#$client->dt_type( 'DateTime' );
+my $db = $client->get_database( $dbName );
+my $suCol = $db->get_collection( 'signUps' );
+my $suLogCol = $db->get_collection( 'signUpLog' );
+
+$suLogCol->drop();
+
+
+my $csv = Text::CSV_XS->new({ sep_char => ',', binary => 1});
+
 
 
 sub parseLocation($) {
@@ -21,7 +41,7 @@ sub parseLocation($) {
     my @levels = ();
     my $result = {};
 
-    if ($locStr =~ m/^Session\s(\d+)/) {
+    if ($locStr =~ m/^\s*Session\s(\d+)/) {
         $session = $1;
 
         @levels = split(/\s*[-&\/]\s*/, substr($locStr, index($locStr, 'Level ') + 6));
@@ -35,7 +55,7 @@ sub parseLocation($) {
     # print "Session: $session\n";
     # print "Levels: @levels\n";
 
-    $result->{'session'} = $session;
+    $result->{'session'} = looks_like_number($session) ? $session + 0 : $session;
     $result->{'levels'} = \@levels;
 
     return $result;
@@ -57,31 +77,88 @@ sub parseTime($) {
         $hour = $4 + 0;
     }
 
-    my $result = DateTime::Tiny->new(
+    my $result = DateTime->new(
         year   => $3 + 2000,
         month  => $1 + 0,
         day    => $2 + 0,
         hour   => $hour,
         minute => $5 + 0,
-        second => 0);
+        second => 0,
+        time_zone => 0);
 
 #    print "Parsed string: $dateTimeStr to @{[$result->DateTime()->mdy()]}\n";
     
     return $result;
 }
 
-my $dbName = $ARGV[0] or die "First argument should be the database name\n";
-my $file = $ARGV[1] or die "Second argument should be the signup CSV file\n";
+sub getEndTime($) {
+    my $signUp = shift;
 
-my $client = MongoDB::MongoClient->new(host => 'localhost:27017');
-my $db = $client->get_database( $dbName );
-my $suCol = $db->get_collection( 'signUps' );
-my $suLogCol = $db->get_collection( 'signUpLog' );
-
-$suLogCol->drop();
+    my $startTime = $signUp->{'dateTime'};
+    my $endTime;
 
 
-my $csv = Text::CSV_XS->new({ sep_char => ',', binary => 1});
+#    print "Finding the end time for Session $signUp->{'sessionInfo'}->{'session'} $signUp->{'item'}: ";
+    #{'item' : '50/50 Raffle', 'sessionInfo.session': {'$gt' : 2}},{'_id' : 1, 'item' : 1, 'sessionInfo.session' : 1, 'dateTime' : 1}).sort({'item' : 1, 'dateTime' : 1}).limit(1)
+    my $nextCursor = $suLogCol->find({'item' => $signUp->{'item'}, 'sessionInfo.session'=> {'$gt' => $signUp->{'sessionInfo'}->{'session'}}},
+                                     {'_id' => 1, 'item' => 1, 'sessionInfo.session' => 1, 'dateTime' => 1})->sort({'item' => 1, 'dateTime' => 1})->limit(1);
+    my $nextSignUp = $nextCursor->next();
+    my $nextStartTime = defined($nextSignUp) ? $nextSignUp->{'dateTime'} : undef;
+    
+    if (defined($nextSignUp)) {
+        if (($startTime->year() == $nextStartTime->year()) &&
+                ($startTime->month() == $nextStartTime->month()) && ($startTime->day() == $nextStartTime->day())) {
+            $endTime = $nextSignUp->{'dateTime'};
+        }
+        else {
+            $endTime = DateTime->new(year => $startTime->year(), month => $startTime->month(), 'day' => $startTime->day(), hour => 23, minute => 59, second => 0, time_zone => 0);
+        }
+    }
+    else {
+        $endTime = DateTime->new(year => $startTime->year(), month => $startTime->month(), 'day' => $startTime->day(), hour => 23, minute => 59, second => 0, time_zone => 0);
+    }
+
+#    print "$endTime\n";
+    
+    return $endTime;
+    
+}
+    
+sub getOverlappingSignUps($$) {
+    my $newSignUp = shift;
+    my $existingSignUps = shift;
+
+    my @conflicts = ();
+    my $conflict;
+
+    foreach my $eSignUp (@$existingSignUps) {
+        if (($eSignUp->{'firstName'} eq $newSignUp->{'firstName'}) &&
+                !($eSignUp->{'item'} ~~ @$noReportJobs) &&
+                !($newSignUp->{'item'} ~~ @$noReportJobs) &&
+                ((($newSignUp->{'dateTime'}->epoch() > $eSignUp->{'dateTime'}->epoch()) &&
+                    ($newSignUp->{'dateTime'}->epoch() < $eSignUp->{'endTime'}->epoch())) ||
+                 (($newSignUp->{'endTime'}->epoch() < $eSignUp->{'endTime'}->epoch()) &&
+                      ($newSignUp->{'endTime'}->epoch() > $eSignUp->{'dateTime'}->epoch())))) {
+            
+            
+            $conflict = {'first' => {'_id' => $newSignUp->{'_id'},
+                                     'firstName' => $newSignUp->{'firstName'},
+                                     'session' => $newSignUp->{'sessionInfo'}->{'session'},
+                                     'item' => $newSignUp->{'item'},
+                                     'start' => $newSignUp->{'dateTime'},
+                                     'end' => $newSignUp->{'endTime'}},
+                         'second' => {'_id' => $eSignUp->{'_id'},
+                                      'firstName' => $eSignUp->{'firstName'},
+                                      'session' => $eSignUp->{'sessionInfo'}->{'session'},
+                                      'item' => $eSignUp->{'item'},
+                                      'start' => $eSignUp->{'dateTime'},
+                                      'end' => $eSignUp->{'endTime'}}};
+            push(@conflicts, $conflict);
+        }
+    }
+
+    return \@conflicts;
+}
 
 
 
@@ -108,8 +185,6 @@ while (my $row = $csv->getline($fh)) {
 
     $signUpQuantity = $row->[2] + 0;
 
-
-
     
     my $record = {
         dateTime => parseTime($row->[0]),
@@ -127,39 +202,10 @@ while (my $row = $csv->getline($fh)) {
     
     #    $suCol->insert($record);
     $email = $record->{'email'};
-    $gymnast = $suCol->find_one({'emails' => $email});
-
-    #    print "Inserting record for $row->[1] $row->[3] $record->{'lastName'}...";
 
     for (my $i = 0; $i < $signUpQuantity; $i++ ) {
-        delete $record->{'logId'};
-        $quantity = 1;
-        
-        $suLogId = $suLogCol->insert($record);
-        $record->{'logId'} = $suLogId;
 
-        # Runners and 50/50 Raffle people don't count as signups, so the users signup count does not get incremented
-        $quantity = 0 if (($record->{'item'} eq 'Runners') || ($record->{'item'} eq '50/50 Raffle'));
-
-
-        if (defined($email) && ($email ne '')) {
-            if ($gymnast) {
-                $suCol->update({'_id' => $gymnast->{'_id'}},
-                               {'$push' => {'signUp' => $record},
-                                '$inc' => {'signUpCount' => $quantity}});
-                #            print "position filled\n";
-            } else {
-                #            print "position empty\n";
-            }
-        }
-        else {
-            #\        print "\n";
-        }
-    
-        if (!defined($gymnast) && defined($email) && ($email ne '')) {
-            #        die "No gymnast found for signup: $email\n";
-            print ">>>>> No gymnast found for signup: $email\n";
-        }
+        $suLogCol->insert($record);
 
         if ((!defined($email) || $email eq '') && (($record->{'lastName'} || $record->{'firstName'}))) {
             print ">>>>> Sign up with name information but no email found for $record->{'firstName'} $record->{'lastName'}\n";
@@ -172,6 +218,57 @@ while (my $row = $csv->getline($fh)) {
 #                   {'$set' => { 'gymnast' => $record}});    
 }
 close $fh;
+
+my $cursor = $suLogCol->find();
+my $overLappingSignUps;      #array reference
+my $endTime;
+my $pushUpdate;
+
+while (my $signUp = $cursor->next() ) {
+
+    $endTime = getEndTime($signUp);
+    $signUp->{'endTime'} = $endTime;
+    $suLogCol->update({'_id' => $signUp->{'_id'}}, {'$set' => {'endTime' => $endTime}});
+    
+    $quantity = 1;
+    
+    #$record->{'logId'} = $suLogId;
+
+
+    
+
+    $email = $signUp->{'email'};
+    $gymnast = $suCol->find_one({'emails' => $email});
+
+    $overLappingSignUps = getOverlappingSignUps($signUp, $gymnast->{'signUp'});
+    
+    # Runners and 50/50 Raffle people don't count as signups, so the users signup count does not get incremented
+    $quantity = 0 if (($signUp->{'item'} eq 'Runners') || ($signUp->{'item'} eq '50/50 Raffle'));
+
+    if (defined($email) && ($email ne '')) {
+        if ($gymnast) {
+
+            $pushUpdate = {'signUp' => $signUp};
+            $pushUpdate->{'conflicts'} = {'$each' => $overLappingSignUps} if (scalar(@$overLappingSignUps) > 0);
+            
+            $suCol->update({'_id' => $gymnast->{'_id'}},
+                           {'$push' => $pushUpdate,
+                            '$inc' => {'signUpCount' => $quantity}});
+                #            print "position filled\n";
+            } else {
+                #            print "position empty\n";
+            }
+        }
+        else {
+            #\        print "\n";
+        }
+    
+    if (!defined($gymnast) && defined($email) && ($email ne '')) {
+        #        die "No gymnast found for signup: $email\n";
+            print ">>>>> No gymnast found for signup: $email\n";
+        }
+}
+
 
 
 __END__

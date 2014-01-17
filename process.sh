@@ -9,4 +9,4 @@ FILE_DIR=~/Documents/Personal/dalmation2014
 ./processExcused.pl $DB_NAME $FILE_DIR/excused-Dalmatian2014.csv
 ./loadSignups.pl $DB_NAME $FILE_DIR/signUpGenius-17Jan2014.csv
 ./counts.pl $DB_NAME
-./validateSignUps.pl $DB_NAME
+./validateSignUps.pl $DB_NAME 
