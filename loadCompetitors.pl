@@ -30,6 +30,7 @@ my $suCol = $db->get_collection( 'signUps' );
 
 
 my $csv = Text::CSV_XS->new({ sep_char => ',', binary => 1});
+my $query;
 
 
 print "Opening file: $file\n";
@@ -42,15 +43,26 @@ while (my $row = $csv->getline($fh)) {
 
     if (($row->[0] ne '') || ($row->[1] ne '')) {
         
-#        print "Setting $row->[0] $row->[1] as a competitor\n";
+#        print "Looking at competitor $row->[0] $row->[1]\n";
     
         # $suCol->update({'$or' => [{'sib1First' => $row->[0]}, {'sib2First' => $row->[0]}], 'last' => trimName($row->[1])},
         #                {'$set' => {'competing' => 1}});
-        $suCol->update({'gymnasts.first' => $row->[0], 'last' => trimName($row->[1])},
-                       {'$set' => {'gymnasts.$.competing' => 1,
-                                   'gymnasts.$.level' => $row->[2],
-                                   'gymnasts.$.session' => $row->[3]},
-                        '$inc' => {'numCompeting' => 1}});
+
+        $query = {'gymnasts.first' => $row->[0], 'last' => trimName($row->[1])};
+        if ($suCol->find_one($query)) {
+#            print "Setting $row->[0] $row->[1] as a competitor\n";
+            $suCol->update($query,
+                           {'$set' => {'gymnasts.$.competing' => 1,
+                                       'gymnasts.$.level' => $row->[2],
+                                       'gymnasts.$.session' => $row->[3]},
+                            '$inc' => {'numCompeting' => 1}},
+                           {'safe' => 1}
+                       );
+
+        }
+        else {
+           print ">>>>>> Cannot find competitor $row->[0] $row->[1]\n"; 
+        }
         
     }
 }
