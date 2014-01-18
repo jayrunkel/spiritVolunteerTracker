@@ -219,7 +219,7 @@ while (my $row = $csv->getline($fh)) {
 }
 close $fh;
 
-my $cursor = $suLogCol->find();
+my $cursor = $suLogCol->find({'endTime' => {'$exists' => 0}});
 my $overLappingSignUps;      #array reference
 my $endTime;
 my $pushUpdate;
@@ -230,19 +230,15 @@ while (my $signUp = $cursor->next() ) {
     $signUp->{'endTime'} = $endTime;
     $suLogCol->update({'_id' => $signUp->{'_id'}}, {'$set' => {'endTime' => $endTime}});
     
-    $quantity = 1;
+#    print "Processing Session $signUp->{'sessionInfo'}->{'session'} $signUp->{'item'}\n";
     
-    #$record->{'logId'} = $suLogId;
-
-
-    
-
     $email = $signUp->{'email'};
     $gymnast = $suCol->find_one({'emails' => $email});
 
     $overLappingSignUps = getOverlappingSignUps($signUp, $gymnast->{'signUp'});
     
     # Runners and 50/50 Raffle people don't count as signups, so the users signup count does not get incremented
+    $quantity = 1;
     $quantity = 0 if (($signUp->{'item'} eq 'Runners') || ($signUp->{'item'} eq '50/50 Raffle'));
 
     if (defined($email) && ($email ne '')) {

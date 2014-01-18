@@ -87,6 +87,52 @@ sub printSessions($) {
     
 }
 
+sub printConflicts($) {
+    my $cursor = shift;
+    
+    my $count = 1;
+    my $conflictCount;
+    my $emailCount;
+    
+
+    print "First Last Session1 Item1 Parent1 Session2 Item2 Parent2 emails\n";
+        
+    while ( my $doc = $cursor->next()) {
+        print "$count: ";
+
+        print "$doc->{'gymnasts'}->[0]->{'first'} ";
+        print "$doc->{'last'} ";
+        $conflictCount = 0;
+        foreach my $conflict (@{$doc->{'conflicts'}}) {
+            print "\n                              " if $conflictCount > 0;
+            
+            print "$conflict->{'first'}->{'session'} ";
+            print "$conflict->{'first'}->{'item'} ";
+            print "$conflict->{'first'}->{'firstName'} ";
+            print "$conflict->{'second'}->{'session'} ";
+            print "$conflict->{'second'}->{'item'} ";
+            print "$conflict->{'second'}->{'firstName'} ";
+
+            if ($conflictCount == 0) {
+                $emailCount = 0;
+                foreach my $email (@{$doc->{'emails'}}) {
+                    print "/" if $emailCount > 0;
+                    print "$email";
+                    $emailCount++;
+                }
+            }
+            
+            $conflictCount++;
+        }
+        
+        print "\n";
+        $count++;
+    }
+    
+}
+
+
+
 sub printFields($$) {
     my $arrayRef = shift;
     my $fieldsRef = shift;
@@ -161,6 +207,22 @@ $aggResult = $suCol->aggregate([{'$match' =>  {'gymnasts.competing' => 1}},
                                     'reqNumSignUps' => '$reqNumSignUps',
                                     'signUpCount' => '$signUpCount',
                                     'fail' => {'$cond' => [{'$gt' => ['$reqNumSignUps', '$signUpCount']}, 1, 0]}}},
+                                {'$match' => {'fail' => 1}}
+                            ]);
+printFields($aggResult, ["first", "last", "reqNumSignUps", "signUpCount", "emails"]);
+
+print "\n";
+print "______________________________________________________\n";
+print "Gymnasts with greater than the required sign ups\n";
+
+$aggResult = $suCol->aggregate([{'$match' =>  {'gymnasts.competing' => 1}},
+                                {'$project' => {
+                                    'first' => '$gymnasts.first',
+                                    'last' => '$last',
+                                    'emails' => '$emails',
+                                    'reqNumSignUps' => '$reqNumSignUps',
+                                    'signUpCount' => '$signUpCount',
+                                    'fail' => {'$cond' => [{'$lt' => ['$reqNumSignUps', '$signUpCount']}, 1, 0]}}},
                                 {'$match' => {'fail' => 1}}
                             ]);
 printFields($aggResult, ["first", "last", "reqNumSignUps", "signUpCount", "emails"]);
@@ -240,7 +302,13 @@ print "Sessions without sign ups (excluding Runners and 50/50 Raffle)\n";
 $resCursor = $suLogCol->find({"email" => "", item => {'$nin' => $noReportJobs}})->sort({"sessionInfo.session" => 1});
 printSessions($resCursor);
               
-    
+
+print "\n";
+print "______________________________________________________\n";
+print "Gymnasts with overlapping sessions (excluding Runners and 50/50 Raffle)\n";
+$resCursor = $suCol->find({'conflicts' => {'$exists' => 1}});
+printConflicts($resCursor);
+
 
 __END__
 
