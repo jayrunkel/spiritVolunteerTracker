@@ -17,7 +17,7 @@ our @EXPORT = qw(@setUpSessions $noReportJobs $nonMeetSpecificJobs $allNonSessio
 
 our @setUpSessions = ('Pre-meet', 'Post-meet');  
 our $noReportJobs = ['Runners', '50/50 Raffle'];  #gymnast jobs
-our $nonMeetSpecificJobs = ['Admissions', 'Concessions', 'Gymnast Sign-in/Front Bathroom', 'Parking Lot Attendant', 'Souveniers'];
+our $nonMeetSpecificJobs = ['Admissions', 'Concessions', 'Gymnast Sign-in/Front Bathroom', 'Parking Lot Attendant', 'Souveniers', 'Crowd Control', 'Concession Runner'];
 our $allNonSessionJobs = \(@$noReportJobs, @$nonMeetSpecificJobs );
 
 sub generateSetTest($$) {
