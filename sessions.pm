@@ -15,7 +15,7 @@ our @ISA = 'Exporter';
 our @EXPORT = qw(@setUpSessions $noReportJobs $nonMeetSpecificJobs $allNonSessionJobs generateSetTest);
 
 
-our @setUpSessions = ('Pre-meet', 'Post-meet');  
+our @setUpSessions = ('Pre-Meet', 'Post-Meet');  
 our $noReportJobs = ['Runners', '50/50 Raffle'];  #gymnast jobs
 our $nonMeetSpecificJobs = ['Admissions', 'Concessions', 'Gymnast Sign-in/Front Bathroom', 'Parking Lot Attendant', 'Souveniers', 'Crowd Control', 'Concession Runner'];
 our $allNonSessionJobs = \(@$noReportJobs, @$nonMeetSpecificJobs );

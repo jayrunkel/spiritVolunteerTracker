@@ -177,8 +177,15 @@ foreach my $s (@sessions) {
 
 }
 
+#print "Starting pre and post meet jobs\n";
+
+
+
+
 #print out pre and post meet jobs
 foreach my $s (@setUpSessions) {
+#    print "Session: $s\n";
+#    print Dumper($signInData->{$s});
         print "$s: @{[formatDateTime($signInData->{$s}->{'sessionJobs'}->[0]->{'dateTime'})]},,,\n";
         
         print "Job:,Name:,Check-in Signature\n";

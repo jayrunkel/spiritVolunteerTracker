@@ -259,7 +259,7 @@ while (my $signUp = $cursor->next() ) {
             #\        print "\n";
         }
     
-    if (!defined($gymnast) && defined($email) && ($email ne '')) {
+    if (!defined($gymnast->{'_id'}) && defined($email) && ($email ne '')) {
         #        die "No gymnast found for signup: $email\n";
             print ">>>>> No gymnast found for signup: $email\n";
         }

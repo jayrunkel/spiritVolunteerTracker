@@ -55,20 +55,24 @@ while (my $row = $csv->getline($fh)) {
     $sibling1Id = $sibling1->{'_id'};
     $sibling2Id = $sibling2->{'_id'};
     
-    die "Could not find records for $row->[0] and $row->[1] $row->[2]" if (!defined($sibling1) || !defined($sibling2));
-
 #    print "Merging records for $row->[0] and $row->[1] $row->[2]\n";
+    if (!defined($sibling1Id) || !defined($sibling2Id)) {
+        print ">>>>> Could not find records for $row->[0] and $row->[1] $row->[2]\n" 
+    }
+    else {
 
-    # print "Sibling 2 last: $sibling2->{'last'}\n";
-    # print "Sibling 2 First: $sibling2->{'sib1First'}\n";
-    # print "Sibling 1 First: $sibling1->{'sib1First'}\n";
-#    print "Sibling 2 ID: $sibling2Id\n";
+        #    print "Sibling 2 last: $sibling2->{'last'}\n";
+        #    print "Sibling 2 First: $sibling2->{'sib1First'}\n";
+        #    print "Sibling 1 First: $sibling1->{'sib1First'}\n";
+        #    print "Sibling 1 ID: $sibling1Id\n";
+        #    print "Sibling 2 ID: $sibling2Id\n";
     
-    $suCol->update({"_id" => $sibling1Id}, {'$push' => {'gymnasts' => $sibling2->{'gymnasts'}[0]},
-                                            '$addToSet' => {'emails' => {'$each' => $sibling2->{'emails'}}},
-                                            '$inc' => {'numGymnasts' => 1}}); 
-    $suCol->remove({'_id' => $sibling2Id, 'last' => trimName($row->[2])}, {'safe' => 1});
-
+    
+        $suCol->update({"_id" => $sibling1Id}, {'$push' => {'gymnasts' => $sibling2->{'gymnasts'}[0]},
+                                                '$addToSet' => {'emails' => {'$each' => $sibling2->{'emails'}}},
+                                                '$inc' => {'numGymnasts' => 1}}); 
+        $suCol->remove({'_id' => $sibling2Id, 'last' => trimName($row->[2])}, {'safe' => 1});            
+    }
 
 };
 
