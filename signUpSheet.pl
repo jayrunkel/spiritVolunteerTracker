@@ -6,6 +6,7 @@
 
 use warnings;
 use strict;
+use experimental 'smartmatch';
 
 use MongoDB;
 use Data::Dumper;
@@ -102,6 +103,9 @@ my $jobModifier;
 foreach my $sessJob (@$result) {
     
     $sessionId = $sessJob->{'_id'};
+    $sessionId =~ s/([\w']+)/\u\L$1/g; # make session names as title case
+#    print "setting up session: $sessionId\n";
+    
     push(@sessions, $sessionId);
     
     $sessSignInData = {
@@ -177,7 +181,7 @@ foreach my $s (@sessions) {
 
 }
 
-#print "Starting pre and post meet jobs\n";
+#print "-----------Starting pre and post meet jobs---------\n";
 
 
 
