@@ -258,7 +258,13 @@ $aggResult = $suCol->aggregate([{'$match' => {'numCompeting' => {'$gt' => 0},
                                              'signUpCount' => {'$gt' => 0}}},
                                 {'$unwind' => '$gymnasts'},
                                 {'$unwind' => '$signUp'},
-                                {'$match' => {'signUp.item' => {'$ne' => 'Medical Person'}}},
+                                {'$match' => {
+                                    '$and'=> [
+                                        {'signUp.item' => {'$ne' => 'Medical Person'}},
+                                        {'signUp.item' => {'$nin' => $noReportJobs}}
+                                    ]
+                                }
+                                },
                                 {'$project' => {
                                     '_id' => '$_id',
                                     'first' => '$gymnasts.first',
@@ -270,7 +276,7 @@ $aggResult = $suCol->aggregate([{'$match' => {'numCompeting' => {'$gt' => 0},
                                     'signUpFirst' => '$signUp.firstName',
                                     'signUpItem' => '$signUp.item'
                                 }},
-                                {'$unwind' => '$signUpLevels'},
+#                                {'$unwind' => '$signUpLevels'},
                                 {'$project' => {
                                     '_id' => '$_id',
                                     'first' => '$first',
@@ -280,11 +286,13 @@ $aggResult = $suCol->aggregate([{'$match' => {'numCompeting' => {'$gt' => 0},
                                     'signUpSession' => '$signUpSession',
                                     'signUpFirst' => '$signUpFirst',
                                     'signUpItem' => '$signUpItem',
+                                    'session' => '$session',
                                     'bad' => {'$cond' => [{'$eq' => ['$session', '$signUpSession']}, 1, 0]}
                                 }},
                                 {'$match' => {'bad' => 1}}
                           ]);
-printFields($aggResult, ["first", "last", "level", "signUpLevels", "signUpSession", "signUpFirst", "signUpItem"]);
+#printFields($aggResult, ["first", "last", "level", "signUpLevels", "signUpSession", "signUpFirst", "signUpItem"]);
+printFields($aggResult, ["first", "last", "level", "session", "signUpSession", "signUpFirst", "signUpItem"]);
 
 
 

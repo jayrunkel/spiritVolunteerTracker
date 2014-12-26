@@ -1,12 +1,12 @@
 #!/bin/bash
 
-DB_NAME=ksg2014
-FILE_DIR=~/Documents/Personal/KSG2014
+DB_NAME=SF2015
+FILE_DIR=~/Documents/Personal/Spirit/SF2015
 
-./loadGymnasts.pl $DB_NAME $FILE_DIR/Gymnasts2013-2014rev03112014.csv 2
-./processSiblings.pl $DB_NAME $FILE_DIR/siblings-21Dec2013.csv
-./loadCompetitors.pl $DB_NAME $FILE_DIR/gymnastsKSG08May2014.csv
-./processExcused.pl $DB_NAME $FILE_DIR/excused-KSG2014.csv
-./loadSignups.pl $DB_NAME $FILE_DIR/signUpGenius-15May2014.csv
-./counts.pl $DB_NAME
-./validateSignUps.pl $DB_NAME 
+perl ./loadGymnasts.pl $DB_NAME $FILE_DIR/2014_15GymnastListRev091514.csv 1
+perl ./processSiblings.pl $DB_NAME $FILE_DIR/siblings-19Sep2014.csv
+perl ./loadCompetitors.pl $DB_NAME $FILE_DIR/snowflake18Dec2014.csv
+perl ./processExcused.pl $DB_NAME $FILE_DIR/excused-RSG2014.csv
+perl ./loadSignups.pl $DB_NAME $FILE_DIR/signUpGenius-25Dec2014.csv
+perl ./counts.pl $DB_NAME
+perl ./validateSignUps.pl $DB_NAME 

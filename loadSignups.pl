@@ -6,6 +6,7 @@
 
 use warnings;
 use strict;
+use experimental 'smartmatch';
 
 use Text::CSV_XS;
 use DateTime;
@@ -261,8 +262,10 @@ while (my $signUp = $cursor->next() ) {
     
     if (!defined($gymnast->{'_id'}) && defined($email) && ($email ne '')) {
         #        die "No gymnast found for signup: $email\n";
-            print ">>>>> No gymnast found for signup: $email\n";
-        }
+        my $first = $signUp->{'firstName'};
+        my $last = $signUp->{'lastName'};
+        print ">>>>> No gymnast found for signup ($first, $last): $email\n";
+    }
 }
 
 
