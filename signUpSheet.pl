@@ -8,6 +8,7 @@ use warnings;
 use strict;
 use experimental 'smartmatch';
 
+use Scalar::Util qw(looks_like_number);
 use MongoDB;
 use Data::Dumper;
 use DateTime;
@@ -44,10 +45,13 @@ sub getSessionEmptySignups($$$$) {
 
     my $results = [];
         
+    $session = looks_like_number($session) ? $session + 0 : $session;
     my $cursor = $suLogCol->find({"email" => "", "sessionInfo.session" => $session, "item" => {$itemFilter => $jobListRef}});
 
     while (my $su = $cursor->next()) {
         $su->{$itemField} = $su->{'item'};
+	$su->{'first'} = $su->{'firstName'};
+	$su->{'last'} = $su->{'lastName'};
 
         push(@$results, $su);
     }
@@ -109,7 +113,7 @@ foreach my $sessJob (@$result) {
     push(@sessions, $sessionId);
     
     $sessSignInData = {
-        sessionId => $sessJob->{'_id'},
+        sessionId => $sessionId, #sessJob->{'_id'},
         sessionJobs => [],
         prepJobs => []
     };
@@ -216,6 +220,9 @@ foreach my $s (@sessions) {
         print "Job:,Name:,Check-in Signature,Event:\n";
 
         @sortedJobs = sort {$a->{'sessionJob'} cmp $b->{'sessionJob'}} (@{$signInData->{$s}->{'sessionJobs'}}, @{getSessionEmptySignups($s, 'sessionJob', '$in', $noReportJobs)});
+
+#	print "Empty Jobs\n";
+#	print Dumper(@{getSessionEmptySignups($s, 'sessionJob', '$in', $noReportJobs)});
         
         foreach my $job (@sortedJobs) {
             if ($job->{'sessionJob'} ~~ @$noReportJobs) {

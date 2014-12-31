@@ -50,6 +50,7 @@ sub parseLocation($) {
     }
     else {
         $session = $locStr;
+	$session =~ s/([\w']+)/\u\L$1/g; # make session names as title case
     } ;
 
     # print "Session Desc: $locStr\n";
