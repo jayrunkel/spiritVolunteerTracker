@@ -10,6 +10,10 @@ use strict;
 use Text::CSV_XS;
 use MongoDB;
 
+my $csv = Text::CSV_XS->new({ sep_char => ',', binary => 1});
+
+
+
 sub trimName($)
 {
     my $string = shift;
@@ -32,14 +36,15 @@ sub normalizeEmail($)
 
 my $dbName = $ARGV[0] or die "First argument should be the database name\n";
 my $file = $ARGV[1] or die "Need to get CSV file on the command line\n";
-my $reqNumSignUps = $ARGV[2] or die "Need to get required number of sign ups on command line\n";
+
 
 my $client = MongoDB::MongoClient->new(host => 'localhost:27017');
 my $db = $client->get_database( $dbName );
 my $suCol = $db->get_collection( 'signUps' );
 $suCol->drop();
 
-my $csv = Text::CSV_XS->new({ sep_char => ',', binary => 1});
+
+
 
 
 my $count = 1;
@@ -71,7 +76,7 @@ while (my $row = $csv->getline($fh)) {
 #    	email2 => normalizeEmail($row->[6]),
     	momDadNames => $row->[7],
     	notes => $row->[8],
-        reqNumSignUps => $reqNumSignUps + 0,
+#        reqNumSignUps => $reqNumSignUps + 0,
         signUpCount => 0,
 #        competing => 0
     };

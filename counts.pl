@@ -27,7 +27,7 @@ my $aggResult = $suCol->aggregate([{'$match' => {'gymnasts.competing' => 1 }},
                                                  'totalSlots' => {'$sum' => '$reqNumSignUps'}}}]);
 my $totalVols = $aggResult->[0]->{'totalSlots'};
 
-my $totalMeetPos = $suLogCol->count({'item' => {'$nin' => ['Runners', '50/50 Raffle']}});
+my $totalMeetPos = $suLogCol->count({'item' => {'$nin' => $noReportJobs}});
 
 print "\n";
 print "________________________________________________________________\n";

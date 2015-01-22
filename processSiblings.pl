@@ -9,6 +9,7 @@ use strict;
 
 use Text::CSV_XS;
 use MongoDB;
+use List::Util qw[min max];
 
 
 sub trimName($)
@@ -38,6 +39,7 @@ my $sibling1;
 my $sibling2;
 my $sibling1Id;
 my $sibling2Id;
+my $reqSignUps;
 
 
 
@@ -61,16 +63,13 @@ while (my $row = $csv->getline($fh)) {
     }
     else {
 
-        #    print "Sibling 2 last: $sibling2->{'last'}\n";
-        #    print "Sibling 2 First: $sibling2->{'sib1First'}\n";
-        #    print "Sibling 1 First: $sibling1->{'sib1First'}\n";
-        #    print "Sibling 1 ID: $sibling1Id\n";
-        #    print "Sibling 2 ID: $sibling2Id\n";
-    
+#            print "Sibling 2 last: $sibling2->{'last'}\n";
+#            print "Sibling 1 ID: $sibling1Id\n";
+#            print "Sibling 2 ID: $sibling2Id\n";
     
         $suCol->update({"_id" => $sibling1Id}, {'$push' => {'gymnasts' => $sibling2->{'gymnasts'}[0]},
                                                 '$addToSet' => {'emails' => {'$each' => $sibling2->{'emails'}}},
-                                                '$inc' => {'numGymnasts' => 1}}); 
+                                                '$inc' => {'numGymnasts' => 1}}),
         $suCol->remove({'_id' => $sibling2Id, 'last' => trimName($row->[2])}, {'safe' => 1});            
     }
 
