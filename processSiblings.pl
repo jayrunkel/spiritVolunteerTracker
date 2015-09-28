@@ -51,6 +51,7 @@ my $firstLine = <$fh>;
 
 while (my $row = $csv->getline($fh)) {
 
+#    print "Line: $row\n";
     $sibling1 = $suCol->find_one({'gymnasts.first' => $row->[0], 'last' => trimName($row->[2])});
     $sibling2 = $suCol->find_one({'gymnasts.first' => $row->[1], 'last' => trimName($row->[2])});
 
@@ -63,9 +64,9 @@ while (my $row = $csv->getline($fh)) {
     }
     else {
 
-#            print "Sibling 2 last: $sibling2->{'last'}\n";
-#            print "Sibling 1 ID: $sibling1Id\n";
-#            print "Sibling 2 ID: $sibling2Id\n";
+#           print "Sibling 2 last: $sibling2->{'last'}\n";
+#           print "Sibling 1 ID: $sibling1Id\n";
+#           print "Sibling 2 ID: $sibling2Id\n";
     
         $suCol->update({"_id" => $sibling1Id}, {'$push' => {'gymnasts' => $sibling2->{'gymnasts'}[0]},
                                                 '$addToSet' => {'emails' => {'$each' => $sibling2->{'emails'}}},

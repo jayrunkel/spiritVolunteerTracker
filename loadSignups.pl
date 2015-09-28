@@ -16,7 +16,7 @@ use Scalar::Util qw(looks_like_number);
 use sessions;
 
 
-my $dateTimeStrRegEx = '^(\d\d?)/(\d\d?)/(\d\d?)\s(\d\d):(\d\d)\s(AM|PM)$';
+my $dateTimeStrRegEx = '^(\d\d?)/(\d\d?)/(\d\d\d?\d?)\s(\d\d):(\d\d)\s(AM|PM)$';
 
 
 my $dbName = $ARGV[0] or die "First argument should be the database name\n";
@@ -53,9 +53,9 @@ sub parseLocation($) {
 	$session =~ s/([\w']+)/\u\L$1/g; # make session names as title case
     } ;
 
-    # print "Session Desc: $locStr\n";
-    # print "Session: $session\n";
-    # print "Levels: @levels\n";
+#    print "Session Desc: $locStr\n";
+#    print "Session: $session\n";
+#    print "Levels: @levels\n";
 
     $result->{'session'} = looks_like_number($session) ? $session + 0 : $session;
     $result->{'levels'} = \@levels;
@@ -66,9 +66,11 @@ sub parseLocation($) {
 sub parseTime($) {
     my $dateTimeStr = shift;
 
+#    print "Parsing date string: $dateTimeStr\n";
+    
     $dateTimeStr =~ /$dateTimeStrRegEx/;
     my $hour;
-
+    
     if (($6 eq 'AM') && ($4 == 12)) {
         $hour = 0;
     }
@@ -194,12 +196,12 @@ while (my $row = $csv->getline($fh)) {
         sessionInfo => parseLocation($row->[1]),
 #    	quantity => $row->[2],
     	item => $row->[3],
-    	firstName => $row->[4],
-    	lastName => $row->[5],
-    	email => lc($row->[6]),
-    	signUpComment => $row->[7],
-    	signUpTimestamp => $row->[8],
-        itemComment => $row->[9]
+    	firstName => $row->[5],
+    	lastName => $row->[6],
+    	email => lc($row->[7]),
+    	signUpComment => $row->[8],
+    	signUpTimestamp => $row->[9],
+        itemComment => $row->[4]
     };
     
     #    $suCol->insert($record);

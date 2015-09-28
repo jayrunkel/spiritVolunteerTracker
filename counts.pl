@@ -25,7 +25,9 @@ my $totalFamVols = $suCol->count({'numCompeting' => {'$gt' => 0}, 'reqNumSignUps
 my $aggResult = $suCol->aggregate([{'$match' => {'gymnasts.competing' => 1 }},
                                    {'$group' => {'_id' => undef,
                                                  'totalSlots' => {'$sum' => '$reqNumSignUps'}}}]);
-my $totalVols = $aggResult->[0]->{'totalSlots'};
+#print Dumper($aggResult->next());
+
+my $totalVols = $aggResult->next()->{'totalSlots'};
 
 my $totalMeetPos = $suLogCol->count({'item' => {'$nin' => $noReportJobs}});
 

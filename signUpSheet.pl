@@ -68,7 +68,7 @@ sub getSessionEmptySignups($$$$) {
 #                                                                  {"\$eq" => ["\$signUp.item", "Medical Person"]}
 #                                                                 ]
 
-my $result = $suCol->aggregate(
+my $resultCur = $suCol->aggregate(
     [
         {"\$match" => {"signUp" => {"\$exists" => 1}}},
         {"\$unwind" => "\$signUp"},
@@ -103,8 +103,9 @@ my $sessionJob;
 my @sortedJobs;
 my $jobModifier;
 
+my @result = $resultCur->all();
 
-foreach my $sessJob (@$result) {
+foreach my $sessJob (@result) {
     
     $sessionId = $sessJob->{'_id'};
     $sessionId =~ s/([\w']+)/\u\L$1/g; # make session names as title case

@@ -28,7 +28,8 @@ my $suCol = $db->get_collection( 'signUps' );
 my $suLogCol = $db->get_collection( 'signUpLog' );
 
 my $resCursor;
-my $aggResult;
+my $aggCursor;
+my @aggResult;
 
 
 sub printNames($$) {
@@ -178,7 +179,7 @@ sub printFields($$) {
 
 print "______________________________________________________\n";
 print "Session List\n";
-$aggResult = $suLogCol->aggregate([{'$group' => {'_id' => '$item',
+$aggCursor = $suLogCol->aggregate([{'$group' => {'_id' => '$item',
                                                 'count' => {'$sum' => 1},
                                                }},
                         {"\$project" =>  {
@@ -191,7 +192,8 @@ $aggResult = $suLogCol->aggregate([{'$group' => {'_id' => '$item',
                         }}
                     ]);
 
-printFields($aggResult, ["job", "type", "count"]);
+@aggResult = $aggCursor->all();
+printFields(\@aggResult, ["job", "type", "count"]);
 
 
 print "______________________________________________________\n";
@@ -199,7 +201,7 @@ print "Gymnasts with fewer than the required sign ups\n";
 #$resCursor = $suCol->find({'$where' => '(this.competing == 1) && (this.reqNumSignUps > this.signUpCount)'});
 #printNames($resCursor, ["reqNumSignUps", "signUpCount", "email1", "email2"]);
 
-$aggResult = $suCol->aggregate([{'$match' =>  {'gymnasts.competing' => 1}},
+$aggCursor = $suCol->aggregate([{'$match' =>  {'gymnasts.competing' => 1}},
                                 {'$project' => {
                                     'first' => '$gymnasts.first',
                                     'last' => '$last',
@@ -208,14 +210,15 @@ $aggResult = $suCol->aggregate([{'$match' =>  {'gymnasts.competing' => 1}},
                                     'signUpCount' => '$signUpCount',
                                     'fail' => {'$cond' => [{'$gt' => ['$reqNumSignUps', '$signUpCount']}, 1, 0]}}},
                                 {'$match' => {'fail' => 1}}
-                            ]);
-printFields($aggResult, ["first", "last", "reqNumSignUps", "signUpCount", "emails"]);
+			       ]);
+@aggResult = $aggCursor->all();
+printFields(\@aggResult, ["first", "last", "reqNumSignUps", "signUpCount", "emails"]);
 
 print "\n";
 print "______________________________________________________\n";
 print "Gymnasts with greater than the required sign ups\n";
 
-$aggResult = $suCol->aggregate([{'$match' =>  {'gymnasts.competing' => 1}},
+$aggCursor = $suCol->aggregate([{'$match' =>  {'gymnasts.competing' => 1}},
                                 {'$project' => {
                                     'first' => '$gymnasts.first',
                                     'last' => '$last',
@@ -224,8 +227,10 @@ $aggResult = $suCol->aggregate([{'$match' =>  {'gymnasts.competing' => 1}},
                                     'signUpCount' => '$signUpCount',
                                     'fail' => {'$cond' => [{'$lt' => ['$reqNumSignUps', '$signUpCount']}, 1, 0]}}},
                                 {'$match' => {'fail' => 1}}
-                            ]);
-printFields($aggResult, ["first", "last", "reqNumSignUps", "signUpCount", "emails"]);
+			       ]);
+@aggResult = $aggCursor->all();
+print Dumper(@aggResult);
+printFields(\@aggResult, ["first", "last", "reqNumSignUps", "signUpCount", "emails"]);
 
 
 print "\n";
@@ -254,7 +259,7 @@ print "Gymnasts signed up for the session in which they are competing\n";
 # printNames($resCursor, []);
 
 
-$aggResult = $suCol->aggregate([{'$match' => {'numCompeting' => {'$gt' => 0},
+$aggCursor = $suCol->aggregate([{'$match' => {'numCompeting' => {'$gt' => 0},
                                              'signUpCount' => {'$gt' => 0}}},
                                 {'$unwind' => '$gymnasts'},
                                 {'$unwind' => '$signUp'},
@@ -290,9 +295,10 @@ $aggResult = $suCol->aggregate([{'$match' => {'numCompeting' => {'$gt' => 0},
                                     'bad' => {'$cond' => [{'$eq' => ['$session', '$signUpSession']}, 1, 0]}
                                 }},
                                 {'$match' => {'bad' => 1}}
-                          ]);
+			       ]);
+@aggResult = $aggCursor->all();
 #printFields($aggResult, ["first", "last", "level", "signUpLevels", "signUpSession", "signUpFirst", "signUpItem"]);
-printFields($aggResult, ["first", "last", "level", "session", "signUpSession", "signUpFirst", "signUpItem"]);
+printFields(\@aggResult, ["first", "last", "level", "session", "signUpSession", "signUpFirst", "signUpItem"]);
 
 
 
