@@ -82,7 +82,7 @@ sub parseTime($) {
     }
 
     my $result = DateTime->new(
-        year   => $3 + 2000,
+        year   => ($3 + 0) < 100 ? $3 + 2000 : $3 + 0,
         month  => $1 + 0,
         day    => $2 + 0,
         hour   => $hour,
@@ -90,7 +90,7 @@ sub parseTime($) {
         second => 0,
         time_zone => 0);
 
-#    print "Parsed string: $dateTimeStr to @{[$result->DateTime()->mdy()]}\n";
+#    print "Parsed string: $dateTimeStr to @{[$result->mdy()]}\n";
     
     return $result;
 }

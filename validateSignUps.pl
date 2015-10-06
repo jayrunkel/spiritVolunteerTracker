@@ -229,7 +229,7 @@ $aggCursor = $suCol->aggregate([{'$match' =>  {'gymnasts.competing' => 1}},
                                 {'$match' => {'fail' => 1}}
 			       ]);
 @aggResult = $aggCursor->all();
-print Dumper(@aggResult);
+#print Dumper(@aggResult);
 printFields(\@aggResult, ["first", "last", "reqNumSignUps", "signUpCount", "emails"]);
 
 
