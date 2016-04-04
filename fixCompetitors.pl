@@ -16,6 +16,9 @@ $doc =~ s/Addyson/Addy/s;
 $doc =~ s/Allesandra/Allie/s;
 $doc =~ s/Delaney/Delany/s;
 $doc =~ s/Margaret/Maggie/s;
+$doc =~ s/Donnely/Donnelly/s;
 $doc =~ s/VonAbo/Von Abo/sg;
+$doc =~ s/Keeley/Keely/sg;
+$doc =~ s/Jernigan/Jerrigan/sg;
     
 print $doc;    

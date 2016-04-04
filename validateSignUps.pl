@@ -323,6 +323,13 @@ print "Gymnasts with overlapping sessions (excluding Runners and 50/50 Raffle)\n
 $resCursor = $suCol->find({'conflicts' => {'$exists' => 1}});
 printConflicts($resCursor);
 
+print "\n";
+print "______________________________________________________\n";
+print "Gymnasts with Overlap Approvals\n";
+$resCursor = $suCol->find({'signUp.overlapApproved' => 'Yes'});
+printNames($resCursor, ["emails"]);
+
+
 
 __END__
 

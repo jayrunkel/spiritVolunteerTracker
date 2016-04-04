@@ -137,12 +137,14 @@ sub getOverlappingSignUps($$) {
 
     foreach my $eSignUp (@$existingSignUps) {
         if (($eSignUp->{'firstName'} eq $newSignUp->{'firstName'}) &&
-                !($eSignUp->{'item'} ~~ @$noReportJobs) &&
-                !($newSignUp->{'item'} ~~ @$noReportJobs) &&
-                ((($newSignUp->{'dateTime'}->epoch() > $eSignUp->{'dateTime'}->epoch()) &&
-                    ($newSignUp->{'dateTime'}->epoch() < $eSignUp->{'endTime'}->epoch())) ||
-                 (($newSignUp->{'endTime'}->epoch() < $eSignUp->{'endTime'}->epoch()) &&
-                      ($newSignUp->{'endTime'}->epoch() > $eSignUp->{'dateTime'}->epoch())))) {
+	    !($eSignUp->{'item'} ~~ @$canOverlapJobs) &&
+	    !($newSignUp->{'item'} ~~ @$canOverlapJobs) &&
+	    ($eSignUp->{'overlapApproved'} ne "Yes") &&
+	    ($newSignUp->{'overlapApproved'} ne "Yes") &&
+	    ((($newSignUp->{'dateTime'}->epoch() > $eSignUp->{'dateTime'}->epoch()) &&
+	      ($newSignUp->{'dateTime'}->epoch() < $eSignUp->{'endTime'}->epoch())) ||
+	     (($newSignUp->{'endTime'}->epoch() < $eSignUp->{'endTime'}->epoch()) &&
+	      ($newSignUp->{'endTime'}->epoch() > $eSignUp->{'dateTime'}->epoch())))) {
             
             
             $conflict = {'first' => {'_id' => $newSignUp->{'_id'},
@@ -175,6 +177,12 @@ my $suLogId;
 
 print "Opening file: $file\n";
 
+# my $l = scalar(@$canOverlapJobs);
+# print "canOverLapJobs[$l]: @$canOverlapJobs\n";
+# print "noReportJobs: @$noReportJobs\n";
+# print "allNonSessionJobs: @$allNonSessionJobs\n";
+
+
 open(my $fh, '<', $file) or die "Could not open '$file' $!\n";
 my $firstLine = <$fh>;
 #print "The first line: $firstLine\n";
@@ -187,7 +195,8 @@ while (my $row = $csv->getline($fh)) {
     $email = undef;
     $quantity = 0;
 
-    $signUpQuantity = $row->[2] + 0;
+    print "WARNING: Found Sign Up with \"\" quantity\n" if $row->[2] eq "";
+    $signUpQuantity = $row->[2] eq "" ? 1 : $row->[2] + 0;
 
     
     my $record = {
@@ -201,7 +210,8 @@ while (my $row = $csv->getline($fh)) {
     	email => lc($row->[7]),
     	signUpComment => $row->[8],
     	signUpTimestamp => $row->[9],
-        itemComment => $row->[4]
+        itemComment => $row->[4],
+	overlapApproved => $row->[10]
     };
     
     #    $suCol->insert($record);

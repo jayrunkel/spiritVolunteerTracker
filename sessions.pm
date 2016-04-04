@@ -12,13 +12,15 @@ use strict;
 use Exporter;
 
 our @ISA = 'Exporter';
-our @EXPORT = qw(@setUpSessions $noReportJobs $nonMeetSpecificJobs $allNonSessionJobs generateSetTest);
+our @EXPORT = qw(@setUpSessions $noReportJobs $canOverlapJobs $nonMeetSpecificJobs $allNonSessionJobs generateSetTest);
 
 
-our @setUpSessions = ('Pre-Meet', 'Post-Meet');  
+our @setUpSessions = ('Pre-Meet', 'Post Meet');  
 our $noReportJobs = ['Runners', '50/50 Raffle'];  #gymnast jobs
+our $allowOverlap = ['Cleaning'];
+our $canOverlapJobs = [ @$noReportJobs, @$allowOverlap ];
 our $nonMeetSpecificJobs = ['Admissions', 'Concessions', 'Gymnast Sign-in/Front Bathroom', 'Parking Lot Attendant', 'Souveniers', 'Crowd Control', 'Concession Runner'];
-our $allNonSessionJobs = \(@$noReportJobs, @$nonMeetSpecificJobs );
+our $allNonSessionJobs = [ @$noReportJobs, @$nonMeetSpecificJobs ];
 
 sub generateSetTest($$) {
     my $arrayRef = shift;

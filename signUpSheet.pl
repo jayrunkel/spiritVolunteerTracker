@@ -213,6 +213,7 @@ foreach my $s (@setUpSessions) {
         print ",,,\n"; 
     }
 
+#print "starting gymnast jobs\n";
 
 # Print out gymnast jobs
 foreach my $s (@sessions) {
