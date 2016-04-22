@@ -82,13 +82,17 @@ while (my $row = $csv->getline($fh)) {
         #                {'$set' => {'competing' => 1}});
 
         $query = {'gymnasts.first' => trimName($row->[0]), 'last' => trimName($row->[1])};
-        $family = $suCol->find_one($query);
-        
+        $family = $suCol->find_one($query);        
         if (defined $family) {
             $curReqS = $family->{'reqNumSignUps'};
             my $reqS = $reqSignUpPerLevel->{$row->[2]};
 
-#            print "$row->[0] $row->[1] - Current Req Sign Ups: $curReqS - Required Sign Ups: $reqS\n";
+	    #            print "$row->[0] $row->[1] - Current Req Sign Ups: $curReqS - Required Sign Ups: $reqS\n";
+
+	    if (!defined ($reqS)) {
+		print ">>>>>> Missing required number of sign ups for level $row->[2] competitor: $row->[0] $row->[1]\n";
+		$reqS = 0;
+	    }
             
             if (!defined ($curReqS) || ($reqS > $curReqS)) {
                 $curReqS = $reqS;

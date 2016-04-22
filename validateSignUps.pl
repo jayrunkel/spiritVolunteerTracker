@@ -279,7 +279,8 @@ $aggCursor = $suCol->aggregate([{'$match' => {'numCompeting' => {'$gt' => 0},
                                     'signUpLevels' => '$signUp.sessionInfo.levels',
                                     'signUpSession' => '$signUp.sessionInfo.session',
                                     'signUpFirst' => '$signUp.firstName',
-                                    'signUpItem' => '$signUp.item'
+                                    'signUpItem' => '$signUp.item',
+				    'emails' => '$emails'
                                 }},
 #                                {'$unwind' => '$signUpLevels'},
                                 {'$project' => {
@@ -292,13 +293,14 @@ $aggCursor = $suCol->aggregate([{'$match' => {'numCompeting' => {'$gt' => 0},
                                     'signUpFirst' => '$signUpFirst',
                                     'signUpItem' => '$signUpItem',
                                     'session' => '$session',
+				    'emails' => '$emails',
                                     'bad' => {'$cond' => [{'$eq' => ['$session', '$signUpSession']}, 1, 0]}
                                 }},
                                 {'$match' => {'bad' => 1}}
 			       ]);
 @aggResult = $aggCursor->all();
 #printFields($aggResult, ["first", "last", "level", "signUpLevels", "signUpSession", "signUpFirst", "signUpItem"]);
-printFields(\@aggResult, ["first", "last", "level", "session", "signUpSession", "signUpFirst", "signUpItem"]);
+printFields(\@aggResult, ["first", "last", "level", "session", "signUpSession", "signUpFirst", "signUpItem", "emails"]);
 
 
 
